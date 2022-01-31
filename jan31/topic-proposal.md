@@ -1,6 +1,6 @@
 # Topic Proposal: Robots and Religion
 
-How does technology affect how humans interact with religious practices and higher power(s)? With what mindset do human creators approach the creation of religion-facing technologies? What are the ramifications of a robot being treated as a deity or manifestation of a deity?
+How does technology affect how humans interact with religious practices and higher power(s)? With what mindset do human creators approach the creation of religion-facing technologies? How possible would it be for a robot to become the ideological center of a religion?
 
 - [Terry Davis, TempleOS](https://templeos.org)
 - [Robot priests](https://www.bbc.com/news/av/technology-58983047)
