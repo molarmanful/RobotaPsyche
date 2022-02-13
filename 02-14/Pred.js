@@ -7,13 +7,13 @@ class Pred extends Herby {
    * @param {number} [y] Y-value of position within the ecosystem.
    * @param {number} [energy] Energy level.
    * @param {number} [life] Amount of time (in frames) before certain death.
-   * @param {number[]} [speeds=[1, 8]] Minimum and maximum base speeds.
+   * @param {number[]} [speeds=[2, 8]] Minimum and maximum base speeds.
    * @param {number} [eff=10] Energy efficiency during movement.
    */
   constructor(env, x, y,
     energy = random(10, 20),
     life = random(15, 30) * 60,
-    speeds = [1, 8],
+    speeds = [2, 8],
     eff = 10
   ){
     super(env, x, y, energy, life)

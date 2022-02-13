@@ -12,7 +12,7 @@ function setup(){
   createCanvas(800, 800)
   rectMode(RADIUS)
 
-  ENV = new Env([400, 50, 15], [400, 200, 100])
+  ENV = new Env([200, 50, 25], [400, 200, 100])
 }
 
 function draw(){

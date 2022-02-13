@@ -13,6 +13,7 @@ class Env {
     this.herbies = [...new Array(num[1])].map(_=> new Herby(this))
     this.preds = [...new Array(num[2])].map(_=> new Pred(this))
 
+    this.num = num
     this.max = org_max
   }
 
@@ -41,8 +42,8 @@ class Env {
    * @param {Function} f Function to execute on each species.
    */
   sync(f){
-    for(let orgs of [this.plants, this.herbies, this.preds]){
-      f(orgs)
+    for(let [i, orgs] of [this.plants, this.herbies, this.preds].entries()){
+      f(orgs, i)
     }
   }
 
@@ -58,6 +59,11 @@ class Env {
   /** Moves the ecosystem one moment forward. */
   act(){
     this.purge()
+    this.sync((orgs, i)=>{
+      while(orgs.length < this.num[i]){
+        orgs.unshift(new [Plant, Herby, Pred][i](this))
+      }
+    })
     this.sync(orgs => orgs.map(a => a.act()))
   }
 

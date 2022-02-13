@@ -7,14 +7,14 @@ class Herby extends Plant {
    * @param {number} [y] Y-value of position within the ecosystem.
    * @param {number} [energy] Energy level.
    * @param {number} [life] Amount of time (in frames) before certain death.
-   * @param {number[]} [speeds=[.5, 4]] Minimum and maximum base speeds.
+   * @param {number[]} [speeds=[1, 4]] Minimum and maximum base speeds.
    * @param {number} [eff=100] Energy efficiency during movement.
    */
   constructor(
     env, x, y,
     energy = random(80, 160),
     life = random(60, 120) * 60,
-    speeds = [.5, 4],
+    speeds = [1, 4],
     eff = 100
   ){
     super(env, x, y, energy, life)
