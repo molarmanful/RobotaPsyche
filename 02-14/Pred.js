@@ -12,7 +12,7 @@ class Pred extends Herby {
    */
   constructor(env, x, y,
     energy = random(20, 40),
-    life = random(60, 120) * 60,
+    life = random(30, 60) * 60,
     speeds = [1, 8],
     eff = 10
   ){
@@ -23,8 +23,8 @@ class Pred extends Herby {
   inFOV(org){
     let h = this.vel.heading()
     let c = p5.Vector.sub(org.pos, this.pos).heading()
-    let u = c - PI / 6
-    let v = c + PI / 6
+    let u = c - PI / 8 
+    let v = c + PI / 8
     return u <= h && h <= v
   }
 
@@ -44,7 +44,7 @@ class Pred extends Herby {
     // Eat if food is close
     if(foods.length && this.energy < 40){
       let best = Env.sort(foods, a => a.energy).reverse()
-      let e = min(best[0].energy, 40 - this.energy)
+      let e = min(4, best[0].energy, 40 - this.energy)
 
       this.energy += e
       best[0].energy -= e
@@ -74,8 +74,9 @@ class Pred extends Herby {
       let mates = Env.sort(squad.filter(a => a.energy >= 20), a => this.pos.dist(a.pos))
 
       if(this.energy >= 20 && mates[0]) this.move(mates[0].pos)
-      else if(foods[0]) this.move(foods[0].pos, !this.isClose(foods[0], 80) || this.energy < this.speeds[1] / this.eff)
+      else if(foods[0]) this.move(foods[0].pos, !this.isClose(foods[0], 200) || this.energy < this.speeds[1] / this.eff)
       else if(squad[0]) this.move(squad[0].pos)
+      else this.vel.setHeading(this.vel.heading() + PI / 12)
     }
 
     this.constrain()

@@ -26,7 +26,7 @@ class Plant {
   /** Moves the organism one moment forward. */
   act(){
     // Generate energy
-    if(this.energy < 10) this.energy += .1
+    if(this.energy < 10) this.energy += .5
 
     // Reproduce
     // TODO: evolution? (e.g. mutation + genetic mixing)
