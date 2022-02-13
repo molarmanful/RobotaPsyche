@@ -7,8 +7,8 @@ class Herby extends Plant {
    * @param {number} [y] Y-value of position within the ecosystem.
    * @param {number} [energy] Energy level.
    * @param {number} [life] Amount of time (in frames) before certain death.
-   * @param {number[]} [speeds=[1, 4]] Minimum and maximum base speeds.
-   * @param {number} [eff=20] Energy efficiency during movement.
+   * @param {number[]} [speeds=[.5, 4]] Minimum and maximum base speeds.
+   * @param {number} [eff=100] Energy efficiency during movement.
    */
   constructor(
     env, x, y,
@@ -63,7 +63,9 @@ class Herby extends Plant {
     if(preds.length && this.energy > this.speeds[1] / this.eff){
       let best = Env.sort(preds, a => a.energy)[0]
 
-      this.move(p5.Vector.sub(this.pos, best.pos).mult(this.speeds[1]), false)
+      this.vel.setMag(this.speeds[1])
+      this.vel.setHeading(p5.Vector.sub(this.pos, best.pos).heading())
+      this.move(p5.Vector.add(this.pos, this.vel), false)
       if(hunters.length){
         hunters.map(a => a.energy -= .1)
         this.energy -= this.speeds[0]
@@ -110,7 +112,7 @@ class Herby extends Plant {
 
       if(this.energy >= 80 && mates[0]) this.move(mates[0].pos)
       else if(foods[0]) this.move(foods[0].pos)
-      else if(foods[0]) this.move(foods[0].pos)
+      else if(squad[0]) this.move(squad[0].pos)
     }
 
     this.constrain()

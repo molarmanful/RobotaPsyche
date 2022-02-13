@@ -11,8 +11,8 @@ class Pred extends Herby {
    * @param {number} [eff=10] Energy efficiency during movement.
    */
   constructor(env, x, y,
-    energy = random(20, 40),
-    life = random(30, 60) * 60,
+    energy = random(10, 20),
+    life = random(15, 30) * 60,
     speeds = [1, 8],
     eff = 10
   ){
