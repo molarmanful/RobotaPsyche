@@ -90,7 +90,7 @@ class Pred extends Herby {
     push()
     translate(this.pos.x, this.pos.y)
     rotate(this.vel.heading())
-    scale(map(this.energy, 0, 40, 5, 20))
+    scale(map(this.energy, 0, 40, 2, 10))
     fill(COLORS.pred)
     triangle(-1, -1, -1, 1, 1, 0)
     pop()
