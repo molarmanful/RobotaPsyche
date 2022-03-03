@@ -10,24 +10,33 @@ class Pred extends Herby {
   constructor(env, x, y, params = {}){
     super(env, x, y, params)
     this.defaults = {
-      energy: random(10, 20),
-      life: random(15, 30) * 60,
-      speeds: [2, 8],
-      eff: 10,
+      maxe: random(20, 40),
+      maxl: random(30, 60),
+      mins: random(0, 2),
+      maxs: random(4, 8),
+      fov: random(PI / 8, PI / 4),
+      vis: random(5, 10),
+      eff: random(10, 20),
     }
-    this.override(this.defaults, params)
+    this.defaults.energy = random(this.defaults.maxe / 2, this.defaults.maxe)
+    this.defaults.life = random(this.defaults.maxl / 2, this.defaults.maxl) * 60
+    this.override({...this.defaults, ...params})
     this.id = this.env.pred_id++
+  }
+
+  dcoeff(){
+    return map(this.energy, 0, 40, 4, 20)
   }
 
   inFOV(org){
     let h = this.vel.heading()
     let c = p5.Vector.sub(org.pos, this.pos).heading()
-    let u = c - PI / 8 
-    let v = c + PI / 8
-    return u <= h && h <= v
+    let u = c - this.fov
+    let v = c + this.fov
+    return u <= h && h <= v && this.isClose(org, this.dcoeff() * this.vis)
   }
 
-  isClose(org, d = 20){
+  isClose(org, d){
     return super.isClose(org, d)
   }
 
@@ -41,12 +50,13 @@ class Pred extends Herby {
     this.energy -= .01
 
     // Eat if food is close
-    if(foods.length && this.energy < 40){
+    if(foods.length && this.energy < this.maxe){
       let best = Env.sort(foods, a => a.energy).reverse()
-      let e = min(4, best[0].energy, 40 - this.energy)
+      let e = min(80, best[0].energy, this.maxe - this.energy)
 
       this.energy += e
       best[0].energy -= e
+      best[0].life -= e
     }
 
     // Reproduce if energy is 20+ and another pred with 20+ energy is close
@@ -56,16 +66,25 @@ class Pred extends Herby {
 
       this.env.preds.unshift(new Pred(
         this.env,
-        this.pos.x + Env.randsign() * (10 + random(-10, 10)),
-        this.pos.y + Env.randsign() * (10 + random(-10, 10)),
-        this.energy / 2))
+        this.pos.x + Env.randsign() * this.dcoeff(),
+        this.pos.y + Env.randsign() * this.dcoeff(),
+        {
+          maxe: this.mix(this.maxe, best.maxe),
+          maxl: this.mix(this.maxl, best.maxl),
+          mins: this.mix(this.mins, best.maxs),
+          maxs: this.mix(this.maxs, best.maxs),
+          fov: this.mix(this.fov, best.fov),
+          vis: this.mix(this.vis, best.vis),
+          eff: this.mix(this.eff, best.eff),
+          energy: this.energy / 2,
+        }))
 
       this.energy /= 2
       best.energy /= 2
     }
 
     // If there is spare energy, move towards the nearest food/mate
-    if(this.energy > this.speeds[0] / this.eff){
+    if(this.energy > this.mins / this.eff){
       let herbies = this.env.herbies.filter(a => a.energy > 0 && this.inFOV(a))
       let foods = Env.sort(herbies, a => this.pos.dist(a.pos))
       homies = homies.filter(a => !this.isClose(a))
@@ -73,9 +92,12 @@ class Pred extends Herby {
       let mates = Env.sort(squad.filter(a => a.energy >= 20), a => this.pos.dist(a.pos))
 
       if(this.energy >= 20 && mates[0]) this.move(mates[0].pos)
-      else if(foods[0]) this.move(foods[0].pos, !this.isClose(foods[0], 200) || this.energy < this.speeds[1] / this.eff)
+      else if(foods[0]) this.move(foods[0].pos, this.energy < this.maxs / this.eff)
       else if(squad[0]) this.move(squad[0].pos)
-      else this.vel.setHeading(this.vel.heading() + PI / 12)
+      else if(this.vel.mag() == 0) this.vel = createVector(random(), random())
+      else {
+        this.vel.setHeading(this.vel.heading() + PI / 48)
+      }
     }
 
     this.constrain()
@@ -89,7 +111,7 @@ class Pred extends Herby {
     push()
     translate(this.pos.x, this.pos.y)
     rotate(this.vel.heading())
-    scale(map(this.energy, 0, 40, 2, 10))
+    scale(this.dcoeff())
     fill(COLORS.pred)
     triangle(-1, -1, -1, 1, 1, 0)
     pop()
