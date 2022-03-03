@@ -50,7 +50,7 @@ class Env {
   /** Disposes of dead organisms. */
   purge(){
     this.sync(orgs => {
-      for(let i = Infinity; ~i; i = orgs.findIndex(a => a.life <= 0 || a.energy <= 0)){
+      for(let i = Infinity; ~i; i = orgs.findIndex(a => a.isDead())){
         orgs.splice(i, 1)
       }
     })

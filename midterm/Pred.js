@@ -21,6 +21,7 @@ class Pred extends Herby {
     this.defaults.energy = random(this.defaults.maxe / 2, this.defaults.maxe)
     this.defaults.life = random(this.defaults.maxl / 2, this.defaults.maxl) * 60
     this.override({...this.defaults, ...params})
+
     this.id = this.env.pred_id++
   }
 
@@ -41,68 +42,70 @@ class Pred extends Herby {
   }
 
   act(){
-    let foods = this.env.herbies.filter(a => this.isClose(a) && a.energy > 0)
-    let homies = this.env.preds.filter(a => this.id != a.id)
-    let squad = homies.filter(a => this.isClose(a))
-    let mates = squad.filter(a => a.energy >= 20)
+    if(!this.isDead()){
+      let foods = this.env.herbies.filter(a => this.isClose(a) && a.energy > 0)
+      let homies = this.env.preds.filter(a => this.id != a.id)
+      let squad = homies.filter(a => this.isClose(a))
+      let mates = squad.filter(a => a.energy >= 20)
 
-    // Idle energy drain
-    this.energy -= .01
+      // Idle energy drain
+      this.energy -= .01
 
-    // Eat if food is close
-    if(foods.length && this.energy < this.maxe){
-      let best = Env.sort(foods, a => a.energy).reverse()
-      let e = min(80, best[0].energy, this.maxe - this.energy)
+      // Eat if food is close
+      if(foods.length && this.energy < this.maxe){
+        let best = Env.sort(foods, a => a.energy).reverse()
+        let e = min(80, best[0].energy, this.maxe - this.energy)
 
-      this.energy += e
-      best[0].energy -= e
-      best[0].life -= e
-    }
-
-    // Reproduce if energy is 20+ and another pred with 20+ energy is close
-    // Halves energy of both parents
-    if(this.env.preds.length < this.env.max[2] && this.energy >= 20 && mates.length){
-      let best = Env.sort(mates, a => this.pos.dist(a.pos))[0]
-
-      this.env.preds.unshift(new Pred(
-        this.env,
-        this.pos.x + Env.randsign() * this.dcoeff(),
-        this.pos.y + Env.randsign() * this.dcoeff(),
-        {
-          maxe: this.mix(this.maxe, best.maxe),
-          maxl: this.mix(this.maxl, best.maxl),
-          mins: this.mix(this.mins, best.maxs),
-          maxs: this.mix(this.maxs, best.maxs),
-          fov: this.mix(this.fov, best.fov),
-          vis: this.mix(this.vis, best.vis),
-          eff: this.mix(this.eff, best.eff),
-          energy: this.energy / 2,
-        }))
-
-      this.energy /= 2
-      best.energy /= 2
-    }
-
-    // If there is spare energy, move towards the nearest food/mate
-    if(this.energy > this.mins / this.eff){
-      let herbies = this.env.herbies.filter(a => a.energy > 0 && this.inFOV(a))
-      let foods = Env.sort(herbies, a => this.pos.dist(a.pos))
-      homies = homies.filter(a => !this.isClose(a))
-      let squad = Env.sort(homies, a => this.pos.dist(a.pos))
-      let mates = Env.sort(squad.filter(a => a.energy >= 20), a => this.pos.dist(a.pos))
-
-      if(this.energy >= 20 && mates[0]) this.move(mates[0].pos)
-      else if(foods[0]) this.move(foods[0].pos, this.energy < this.maxs / this.eff)
-      else if(squad[0]) this.move(squad[0].pos)
-      else if(this.vel.mag() == 0) this.vel = createVector(random(), random())
-      else {
-        this.vel.setHeading(this.vel.heading() + PI / 48)
+        this.energy += e
+        best[0].energy -= e
+        best[0].life -= e
       }
+
+      // Reproduce if energy is 20+ and another pred with 20+ energy is close
+      // Halves energy of both parents
+      if(this.env.preds.length < this.env.max[2] && this.energy >= 20 && mates.length){
+        let best = Env.sort(mates, a => this.pos.dist(a.pos))[0]
+
+        this.env.preds.unshift(new Pred(
+          this.env,
+          this.pos.x + Env.randsign() * this.dcoeff(),
+          this.pos.y + Env.randsign() * this.dcoeff(),
+          {
+            maxe: this.mix(this.maxe, best.maxe),
+            maxl: this.mix(this.maxl, best.maxl),
+            mins: this.mix(this.mins, best.maxs),
+            maxs: this.mix(this.maxs, best.maxs),
+            fov: this.mix(this.fov, best.fov),
+            vis: this.mix(this.vis, best.vis),
+            eff: this.mix(this.eff, best.eff),
+            energy: this.energy / 2,
+          }))
+
+        this.energy /= 2
+        best.energy /= 2
+      }
+
+      // If there is spare energy, move towards the nearest food/mate
+      if(this.energy > this.mins / this.eff){
+        let herbies = this.env.herbies.filter(a => this.inFOV(a) && !this.isDead())
+        let foods = Env.sort(herbies, a => this.pos.dist(a.pos))
+        homies = homies.filter(a => !this.isClose(a))
+        let squad = Env.sort(homies, a => this.pos.dist(a.pos))
+        let mates = Env.sort(squad.filter(a => a.energy >= 20), a => this.pos.dist(a.pos))
+
+        if(this.energy >= 20 && mates[0]) this.move(mates[0].pos)
+        else if(foods[0]) this.move(foods[0].pos, this.energy < this.maxs / this.eff)
+        else if(squad[0]) this.move(squad[0].pos)
+        else if(this.vel.mag() == 0) this.vel = createVector(random(), random())
+        else {
+          this.vel.setHeading(this.vel.heading() + PI / 48)
+        }
+      }
+
+      this.constrain()
+
+      this.life--
     }
-
-    this.constrain()
-
-    this.life--
   }
 
   draw(){

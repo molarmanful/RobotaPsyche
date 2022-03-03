@@ -56,80 +56,82 @@ class Herby extends Plant {
   }
 
   act(){
-    let preds = this.env.preds.filter(a => this.isClose(a, this.maxe))
-    let hunters = preds.filter(a => this.isClose(a, this.maxe / 3))
+    if(!this.isDead()){
+      let preds = this.env.preds.filter(a => this.isClose(a, this.maxe))
+      let hunters = preds.filter(a => this.isClose(a, this.maxe / 3))
 
-    let panic = false
+      let panic = false
 
-    // Idle energy drain
-    this.energy -= .1
+      // Idle energy drain
+      this.energy -= .1
 
-    // Flight response
-    if(preds.length && this.energy > this.maxs / this.eff){
-      let best = Env.sort(preds, a => a.energy)[0]
+      // Flight response
+      if(preds.length && this.energy > this.maxs / this.eff){
+        let best = Env.sort(preds, a => a.energy)[0]
 
-      this.vel.setMag(this.maxs)
-      this.vel.setHeading(p5.Vector.sub(this.pos, best.pos).heading())
-      this.move(p5.Vector.add(this.pos, this.vel), false)
-      if(hunters.length){
-        hunters.map(a => a.energy -= .1)
-        this.energy -= this.mins
+        this.vel.setMag(this.maxs)
+        this.vel.setHeading(p5.Vector.sub(this.pos, best.pos).heading())
+        this.move(p5.Vector.add(this.pos, this.vel), false)
+        if(hunters.length){
+          hunters.map(a => a.energy -= .1)
+          this.energy -= this.mins
+        }
+        panic = true
       }
-      panic = true
+
+      let foods = this.env.plants.filter(a => this.isClose(a) && !a.isDead())
+      let homies = this.env.herbies.filter(a => this.id != a.id)
+      let squad = homies.filter(a => this.isClose(a))
+      let mates = squad.filter(a => a.energy >= 80)
+
+      // Eat if food is close
+      if(foods.length && this.energy < this.maxe){
+        let best = Env.sort(foods, a => a.energy).reverse()
+        let e = min(5, best[0].energy, this.maxe - this.energy)
+
+        this.energy += e
+        best[0].energy -= e
+      }
+
+      // Reproduce if energy is 80+ and another herby with 80+ energy is close
+      // Halves energy of both parents
+      if(this.env.herbies.length < this.env.max[1] && this.energy >= 80 && mates.length){
+        let best = Env.sort(mates, a => this.pos.dist(a.pos))[0]
+
+        this.env.herbies.unshift(new Herby(
+          this.env,
+          this.pos.x + Env.randsign() * this.dcoeff(),
+          this.pos.y + Env.randsign() * this.dcoeff(),
+          {
+            maxe: this.mix(this.maxe, best.maxe),
+            maxl: this.mix(this.maxl, best.maxl),
+            mins: this.mix(this.mins, best.maxs),
+            maxs: this.mix(this.maxs, best.maxs),
+            eff: this.mix(this.eff, best.eff),
+            energy: this.energy / 2,
+          }))
+
+        this.energy /= 2
+        best.energy /= 2
+      }
+
+      // If there is spare energy, move towards the nearest food/mate
+      // TODO: make herby account for food/mate density when deciding where to move
+      if(!panic && this.energy > this.mins / this.eff){
+        let foods = Env.sort(this.env.plants.filter(a => !a.isDead()), a => this.pos.dist(a.pos))
+        homies = homies.filter(a => !this.isClose(a))
+        let squad = Env.sort(homies, a => this.pos.dist(a.pos))
+        let mates = Env.sort(squad.filter(a => a.energy >= 80), a => this.pos.dist(a.pos))
+
+        if(this.energy >= 80 && mates[0]) this.move(mates[0].pos)
+        else if(foods[0]) this.move(foods[0].pos)
+        else if(squad[0]) this.move(squad[0].pos)
+      }
+
+      this.constrain()
+
+      this.life--
     }
-
-    let foods = this.env.plants.filter(a => this.isClose(a) && a.energy > 0)
-    let homies = this.env.herbies.filter(a => this.id != a.id)
-    let squad = homies.filter(a => this.isClose(a))
-    let mates = squad.filter(a => a.energy >= 80)
-
-    // Eat if food is close
-    if(foods.length && this.energy < this.maxe){
-      let best = Env.sort(foods, a => a.energy).reverse()
-      let e = min(5, best[0].energy, this.maxe - this.energy)
-
-      this.energy += e
-      best[0].energy -= e
-    }
-
-    // Reproduce if energy is 80+ and another herby with 80+ energy is close
-    // Halves energy of both parents
-    if(this.env.herbies.length < this.env.max[1] && this.energy >= 80 && mates.length){
-      let best = Env.sort(mates, a => this.pos.dist(a.pos))[0]
-
-      this.env.herbies.unshift(new Herby(
-        this.env,
-        this.pos.x + Env.randsign() * this.dcoeff(),
-        this.pos.y + Env.randsign() * this.dcoeff(),
-        {
-          maxe: this.mix(this.maxe, best.maxe),
-          maxl: this.mix(this.maxl, best.maxl),
-          mins: this.mix(this.mins, best.maxs),
-          maxs: this.mix(this.maxs, best.maxs),
-          eff: this.mix(this.eff, best.eff),
-          energy: this.energy / 2,
-        }))
-
-      this.energy /= 2
-      best.energy /= 2
-    }
-
-    // If there is spare energy, move towards the nearest food/mate
-    // TODO: make herby account for food/mate density when deciding where to move
-    if(!panic && this.energy > this.mins / this.eff){
-      let foods = Env.sort(this.env.plants.filter(a => a.energy > 0), a => this.pos.dist(a.pos))
-      homies = homies.filter(a => !this.isClose(a))
-      let squad = Env.sort(homies, a => this.pos.dist(a.pos))
-      let mates = Env.sort(squad.filter(a => a.energy >= 80), a => this.pos.dist(a.pos))
-
-      if(this.energy >= 80 && mates[0]) this.move(mates[0].pos)
-      else if(foods[0]) this.move(foods[0].pos)
-      else if(squad[0]) this.move(squad[0].pos)
-    }
-
-    this.constrain()
-
-    this.life--
   }
 
   draw(){

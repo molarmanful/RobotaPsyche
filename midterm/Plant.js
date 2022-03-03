@@ -33,6 +33,10 @@ class Plant {
     return this.energy * 2
   }
 
+  isDead(){
+    return this.energy <= 0 || this.life <= 0
+  }
+
   /** Limits position to the bounds of the ecosystem. */
   constrain(){
     this.pos.x = constrain(this.pos.x, this.maxe, width - this.maxe)
@@ -41,25 +45,27 @@ class Plant {
 
   /** Moves the organism one moment forward. */
   act(){
-    // Generate energy
-    if(this.energy < this.maxe) this.energy += .5
+    if(!this.isDead()){
+      // Generate energy
+      if(this.energy < this.maxe) this.energy += .5
 
-    // Reproduce
-    while(this.env.plants.length < this.env.max[0] && this.energy >= 5){
-      this.env.plants.unshift(new Plant(
-        this.env,
-        this.pos.x + Env.randsign() * random(1, 10) * this.dcoeff(),
-        this.pos.y + Env.randsign() * random(1, 10) * this.dcoeff(),
-        {
-          maxe: this.mix(this.maxe, this.maxe),
-          maxl: this.mix(this.maxl, this.maxl),
-          energy: 1,
-        }))
+      // Reproduce
+      while(this.env.plants.length < this.env.max[0] && this.energy >= 5){
+        this.env.plants.unshift(new Plant(
+          this.env,
+          this.pos.x + Env.randsign() * random(1, 10) * this.dcoeff(),
+          this.pos.y + Env.randsign() * random(1, 10) * this.dcoeff(),
+          {
+            maxe: this.mix(this.maxe, this.maxe),
+            maxl: this.mix(this.maxl, this.maxl),
+            energy: 1,
+          }))
 
-      this.energy -= 1
+        this.energy -= 1
+      }
+
+      this.life--
     }
-
-    this.life--
   }
 
   mix(a, b, i = .1){
