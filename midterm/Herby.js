@@ -15,14 +15,20 @@ class Herby extends Plant {
       maxl: random(60, 120),
       mins: random(0, 1),
       maxs: random(2, 4),
+      color: color(COLORS.herby),
       eff: random(20, 40),
     }
     this.defaults.energy = random(this.defaults.maxe / 2, this.defaults.maxe)
     this.defaults.life = random(this.defaults.maxl / 2, this.defaults.maxl) * 60
+    this.defaults.hue = hue(this.defaults.color) + random(-20, 20)
     this.override({...this.defaults, ...params})
+
+    this.goal = null
 
     this.id = this.env.herby_id++
     this.vel = createVector(random(), random())
+
+    this.constrain()
   }
 
   dcoeff(){
@@ -48,10 +54,16 @@ class Herby extends Plant {
   // TODO: physics-based movement, momentum conserves energy
   // TODO: collision?
   move(pos, safe = true){
+    this.goal = pos
+
     let maxSpeed = safe ? this.mins : this.maxs
-    this.vel = p5.Vector.sub(pos, this.pos)
-    if(this.vel.mag() > maxSpeed) this.vel.setMag(maxSpeed)
+    let target = p5.Vector.sub(pos, this.pos)
+    
+    target.setMag(maxSpeed)
+    let steer = p5.Vector.sub(target, this.vel)
+    steer.limit(1)
     this.pos.add(this.vel)
+    this.vel.add(steer)
     this.energy -= this.vel.mag() / this.eff
   }
 
@@ -69,9 +81,10 @@ class Herby extends Plant {
       if(preds.length && this.energy > this.maxs / this.eff){
         let best = Env.sort(preds, a => a.energy)[0]
 
-        this.vel.setMag(this.maxs)
-        this.vel.setHeading(p5.Vector.sub(this.pos, best.pos).heading())
-        this.move(p5.Vector.add(this.pos, this.vel), false)
+        let v = this.vel.copy()
+        v.setMag(this.maxs)
+        v.setHeading(p5.Vector.sub(this.pos, best.pos).heading())
+        this.move(p5.Vector.add(this.pos, v), false)
         if(hunters.length){
           hunters.map(a => a.energy -= .1)
           this.energy -= this.mins
@@ -107,6 +120,7 @@ class Herby extends Plant {
             maxl: this.mix(this.maxl, best.maxl),
             mins: this.mix(this.mins, best.maxs),
             maxs: this.mix(this.maxs, best.maxs),
+            hue: this.mix(this.hue, this.hue),
             eff: this.mix(this.eff, best.eff),
             energy: this.energy / 2,
           }))
@@ -119,13 +133,13 @@ class Herby extends Plant {
       // TODO: make herby account for food/mate density when deciding where to move
       if(!panic && this.energy > this.mins / this.eff){
         let foods = Env.sort(this.env.plants.filter(a => !a.isDead()), a => this.pos.dist(a.pos))
-        homies = homies.filter(a => !this.isClose(a))
-        let squad = Env.sort(homies, a => this.pos.dist(a.pos))
+        squad = homies.filter(a => this.isClose(a, this.maxe))
+        let alphas = Env.sort(homies, a => a.energy).reverse()
         let mates = Env.sort(squad.filter(a => a.energy >= 80), a => this.pos.dist(a.pos))
 
         if(this.energy >= 80 && mates[0]) this.move(mates[0].pos)
         else if(foods[0]) this.move(foods[0].pos)
-        else if(squad[0]) this.move(squad[0].pos)
+        else if(alphas[0]) this.move(alphas[0].goal || alphas[0].pos)
       }
 
       this.constrain()
@@ -140,7 +154,7 @@ class Herby extends Plant {
     push()
     translate(this.pos.x, this.pos.y)
     rotate(this.vel.heading())
-    fill(COLORS.herby)
+    fill(color(this.hue, brightness(this.color), saturation(this.color)))
     square(0, 0, this.dcoeff())
     pop()
   }

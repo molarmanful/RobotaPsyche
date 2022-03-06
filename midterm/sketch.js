@@ -11,8 +11,10 @@ function setup(){
   // createCanvas(windowWidth, windowHeight)
   createCanvas(800, 800)
   rectMode(RADIUS)
+  colorMode(HSB)
 
-  ENV = new Env([200, 50, 25], [400, 200, 100])
+  ENV = new Env([100, 50, 25], [400, 200, 100])
+  // ENV = new Env([100, 50, 25], [400, 200, 100])
 }
 
 function draw(){

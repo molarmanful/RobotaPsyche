@@ -16,25 +16,34 @@ class Pred extends Herby {
       maxs: random(4, 8),
       fov: random(PI / 8, PI / 4),
       vis: random(5, 10),
+      color: color(COLORS.pred),
       eff: random(10, 20),
     }
     this.defaults.energy = random(this.defaults.maxe / 2, this.defaults.maxe)
     this.defaults.life = random(this.defaults.maxl / 2, this.defaults.maxl) * 60
+    this.defaults.hue = hue(this.defaults.color) + random(-20, 20)
     this.override({...this.defaults, ...params})
 
     this.id = this.env.pred_id++
+
+    this.constrain()
   }
 
   dcoeff(){
     return map(this.energy, 0, 40, 4, 20)
   }
 
-  inFOV(org){
+  /**
+   * Checks if organism is within pred sightlines.
+   * @param {Plant|Herby|Pred} org Organism to check.
+   * @param {number} [vis] Max. distance from pred to check.
+   */
+  inFOV(org, vis = this.vis){
     let h = this.vel.heading()
     let c = p5.Vector.sub(org.pos, this.pos).heading()
     let u = c - this.fov
     let v = c + this.fov
-    return u <= h && h <= v && this.isClose(org, this.dcoeff() * this.vis)
+    return u <= h && h <= v && this.isClose(org, this.dcoeff() * vis)
   }
 
   isClose(org, d){
@@ -77,6 +86,7 @@ class Pred extends Herby {
             maxs: this.mix(this.maxs, best.maxs),
             fov: this.mix(this.fov, best.fov),
             vis: this.mix(this.vis, best.vis),
+            hue: this.mix(this.hue, this.hue),
             eff: this.mix(this.eff, best.eff),
             energy: this.energy / 2,
           }))
@@ -87,18 +97,21 @@ class Pred extends Herby {
 
       // If there is spare energy, move towards the nearest food/mate
       if(this.energy > this.mins / this.eff){
-        let herbies = this.env.herbies.filter(a => this.inFOV(a) && !this.isDead())
+        let herbies = this.env.herbies.filter(a => this.inFOV(a, this.vis * 2) && !this.isDead())
         let foods = Env.sort(herbies, a => this.pos.dist(a.pos))
-        homies = homies.filter(a => !this.isClose(a))
-        let squad = Env.sort(homies, a => this.pos.dist(a.pos))
+        squad = homies.filter(a => !this.isClose(a, this.dcoeff * this.vis))
+        let alphas = Env.sort(homies, a => a.energy).reverse()
         let mates = Env.sort(squad.filter(a => a.energy >= 20), a => this.pos.dist(a.pos))
 
         if(this.energy >= 20 && mates[0]) this.move(mates[0].pos)
-        else if(foods[0]) this.move(foods[0].pos, this.energy < this.maxs / this.eff)
-        else if(squad[0]) this.move(squad[0].pos)
+        else if(foods[0]) this.move(foods[0].pos, this.inFOV(foods[0]) || this.energy < this.maxs / this.eff)
+        else if(alphas[0] && alphas[0].goal) this.move(alphas[0].goal)
         else if(this.vel.mag() == 0) this.vel = createVector(random(), random())
         else {
-          this.vel.setHeading(this.vel.heading() + PI / 48)
+          let v = this.vel.copy()
+          v.setMag(this.maxs)
+          v.setHeading(this.vel.heading() + PI / 6)
+          this.move(p5.Vector.add(this.pos, v))
         }
       }
 
@@ -115,7 +128,7 @@ class Pred extends Herby {
     translate(this.pos.x, this.pos.y)
     rotate(this.vel.heading())
     scale(this.dcoeff())
-    fill(COLORS.pred)
+    fill(color(this.hue, brightness(this.color), saturation(this.color)))
     triangle(-1, -1, -1, 1, 1, 0)
     pop()
   }
