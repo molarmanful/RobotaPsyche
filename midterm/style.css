@@ -6,9 +6,24 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: monospace;
+  color: #fff;
 }
 
 canvas {
   display: block;
   border: 1px solid #EFEFEF;
+}
+
+#key {
+  margin-left: 3rem;
+  border: 1px solid #EFEFEF;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-bottom: 1rem;
+}
+
+#key p {
+  white-space: pre;
+  tab-size: 3;
 }

@@ -9,7 +9,8 @@ let COLORS = {
 
 function setup(){
   // createCanvas(windowWidth, windowHeight)
-  createCanvas(800, 800)
+  let c = createCanvas(800, 800)
+  c.parent('#canvas')
   rectMode(RADIUS)
   colorMode(HSB)
 
